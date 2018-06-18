@@ -18,8 +18,8 @@ BitMore交易所官方API文档
         - [时间戳](#时间戳)
         - [例子](#例子)
         - [数字](#数字)
-    - [访问限制](#访问限制)
-        - [REST API](#rest-api)
+        - [限流](#限流)
+                - [REST API](#rest-api)
 - [现货(Spot)业务API参考](#现货spot业务api参考)
     - [币币行情API](#币币行情api)
         - [1. 获取所有币对列表](#1-获取所有币对列表)
@@ -79,29 +79,31 @@ API Key 和 Secret 将由随机生成和提供。
 * 所有请求都应该含有application/json类型内容，并且是有效的JSON。
 
 ## 签名
-ACCESS-SIGN的请求头是对 **timestamp + method + requestPath + body** 字符串(+表示字符串连接)使用 **HMAC SHA256** 方法加密，通过**BASE64** 编码输出而得到的。其中，timestamp 的值与 ACCESS-TIMESTAMP 请求头相同。
+ACCESS-SIGN的请求头是对 **timestamp + method + requestPath + "?" + queryString + body** 字符串(+表示字符串连接)使用 **HMAC SHA256** 方法加密，通过**BASE64** 编码输出而得到的。其中，timestamp 的值与 ACCESS-TIMESTAMP 
+请求头相同。
 
 * method 是请求方法(POST/GET/PUT/DELETE)，字母全部大写。
 * requestPath 是请求接口路径。
+* queryString GET请求中的查询字符串
 * body 是指请求主体的字符串，如果请求没有主体(通常为GET请求)则body可省略。
 
-**例如：对于如下的参数进行签名**
+**例如：对于如下的请求参数进行签名**
+
+```bash
+curl "https://www.bitmore.top/api/v1/spot/ccex/orders?limit=100"       
+```
 
 ```java
-Timestamp = 1590000000.28
+Timestamp = 1590000000.281 
 Method = "GET"
-requestPath = "https://www.bitmore.top/api/v1/spot/ccex/orders"
-body = {
-    "code=btc-usdt",
-    "type=buy",
-    "price=680",
-    "amount=1.0"
-};
+requestPath = "/api/v1/spot/ccex/orders"
+queryString= "?limit=100"
+body = ""
 ```
 
 生成待签名的字符串 
 ```
-Message = '1590000000.28/GEThttps://www.bitmore.top/api/v1/spot/ccex/orders'+body.encode('utf-8')
+Message = '1590000000.281/GET/api/v1/spot/ccex/orders?limit=100'
 ```
 
 然后，将待签名字符串添加私钥参数生成最终待签名字符串。
@@ -179,9 +181,11 @@ HTTP状态码200表示成功响应，并可能包含内容。如果响应含有�
 
 为了保持跨平台时精度的完整性，十进制数字作为字符串返回。建议您在发起请求时也将数字转换为字符串以避免截断和精度错误。 整数（如交易编号和顺序）不加引号。
 
-## 访问限制
+### 限流
 
-### REST API
+如果请求过于频繁系统将自动限制请求，并在http header中返回429 too many requests状态码。
+
+##### REST API
 
 * 公共接口：我们通过IP限制公共接口的调用：每2秒最6个请求。
 
@@ -729,5 +733,5 @@ HTTP状态码200表示成功响应，并可能包含内容。如果响应含有�
 |address|String|是|提现地址|
   
 
-[BitMore]: http://www.bitmore.top 
+[BitMore]: https://www.bitmore.top 
 [English Docs]: https://github.com/bitmore-top/bitmore-official-api-docs/blob/master/README.md
